@@ -44,7 +44,7 @@ function Shell({ children }: { children: ReactNode }) {
       </div>
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <aside className={'side noprint' + (open ? ' open' : '')}>
-        <div className="brand"><strong>نظام المخازن</strong><span>Legacy Fine Touch</span></div>
+        <div className="brand"><strong>نظام المخازن</strong><span>MG Matrial control</span></div>
         <nav className="nav">
           {NAV.filter((n) => allowed(n.perm)).map((n) => (
             <div key={n.to}>
