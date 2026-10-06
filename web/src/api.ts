@@ -1,7 +1,7 @@
 const SB_URL = ((import.meta.env.VITE_SUPABASE_URL as string | undefined) || '').replace(/\/$/, '');
 const SB_KEY = (import.meta.env.VITE_SUPABASE_KEY as string | undefined) || '';
 const SESSION_KEY = 'inv_session';
-const EMAIL_DOMAIN = 'mginv.example.com';
+const EMAIL_DOMAIN = 'mginv.example.com'; // لازم يتطابق مع DOMAIN في supabase/functions/users/index.ts
 
 interface Session { access_token: string; refresh_token: string; expires_at: number }
 
@@ -19,7 +19,7 @@ const saveSession = (r: any) => {
 let onUnauthorized: () => void = () => {};
 export const setUnauthorizedHandler = (fn: () => void) => (onUnauthorized = fn);
 
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
@@ -135,7 +135,7 @@ export interface User { id: string; name: string; username: string; permissions:
 export interface Warehouse { id: string; name: string; location: string | null; isActive: boolean }
 export interface Item { id: string; code: string; name: string; barcode: string | null; category: string | null; unit: string; minQty: number; notes: string | null; isActive: boolean }
 export interface Party { id: string; type: 'supplier' | 'customer'; name: string; phone: string | null; notes: string | null; isActive: boolean }
-export interface DocLine { id: string; itemId: string; qty: number; item: Item }
+interface DocLine { id: string; itemId: string; qty: number; item: Item }
 export interface StockDoc {
   id: string; number: string; type: DocType; date: string; reference: string | null; notes: string | null;
   fromWarehouse: Warehouse | null; toWarehouse: Warehouse | null; party: Party | null;
@@ -143,6 +143,7 @@ export interface StockDoc {
 }
 export interface BalanceRow { item: Item; perWarehouse: Record<string, number>; total: number; qty: number; low: boolean }
 
+// لازم تتطابق مع PERMISSIONS في supabase/functions/users/index.ts
 export const PERMS: { key: string; label: string }[] = [
   { key: 'items', label: 'إدارة الأصناف' },
   { key: 'warehouses', label: 'إدارة المخازن' },

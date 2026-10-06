@@ -1,90 +1,33 @@
-# نظام المخازن (MG Inventory)
+# نظام المخازن (MG Material Control)
 
 أصناف ومخازن متعددة، إذن إضافة وصرف وتحويل، أرصدة، تنبيه حد أدنى، موردين وعملاء، مستخدمين وصلاحيات، تقارير وحركة أصناف، بحث وباركود.
 
-## النسخة الأونلاين (Supabase + GitHub Pages)
-- **الواجهة:** `web/` (React) بتتنشر تلقائياً على GitHub Pages مع كل push على `main` (ملف `.github/workflows/pages.yml`).
-- **قاعدة البيانات والـ API:** Supabase. الجداول في `supabase/migrations/001_schema.sql` والـ API في `002_api.sql` (دالة `public.api`). الجداول مقفولة، والتطبيق بيكلّم الدالة دي بس.
-- **إدارة المستخدمين:** دالة السيرفر `supabase/functions/users` (إنشاء/تعديل/حذف مستخدمين).
-- **الاتصال:** `web/.env.production` فيه عنوان المشروع والمفتاح العام (publishable) وهو مصمم يكون علني.
-- اسم المستخدم بيتحول داخلياً لإيميل `اسم@mginv.example.com`، فاسم المستخدم لازم حروف إنجليزية صغيرة وأرقام.
-
-الباك إند القديم (`backend/`) والموبايل (`mobile/`) لسه موجودين في المشروع، ونسخة الأونلاين الحالية بتستغني عن الباك إند.
-
----
-
-## النسخة المحلية القديمة
+## المكونات
 ```
-backend/   NestJS + PostgreSQL (REST API)
-web/       React + Vite (عربي RTL)
-mobile/    Flutter (أندرويد / iOS) بمسح باركود بالكاميرا
+web/        الواجهة: React + Vite (عربي RTL) — منشورة على GitHub Pages
+supabase/   قاعدة البيانات والـ API ودالة إدارة المستخدمين
+mobile/     تطبيق Flutter (لسه متوصّل بالباك إند القديم، مش شغال مع Supabase)
 ```
 
-## أسرع طريقة لفتح النظام (بدون تسطيب قاعدة بيانات)
-محتاج بس **Node.js 22 (LTS)** من https://nodejs.org
+## كيف يشتغل
+- **قاعدة البيانات:** Supabase. الجداول في `supabase/migrations/001_schema.sql` وكلها مقفولة، والتطبيق بيكلّم دالة واحدة بس `public.api` (في `002_api.sql`).
+- **إدارة المستخدمين:** دالة السيرفر `supabase/functions/users` (إنشاء/تعديل/حذف). اسم المستخدم بيتحول داخلياً لإيميل `اسم@mginv.example.com`، فلازم يكون حروف إنجليزية صغيرة وأرقام.
+- **الاتصال:** `web/.env.production` فيه عنوان المشروع والمفتاح العام (publishable)، وده مصمم يكون علني.
 
-- **ويندوز:** دوس مرتين على `start.bat`
-- **ماك / لينكس:** `./start.sh`
-
-أول مرة هيسطّب ويبني كل حاجة (كام دقيقة) وبعدها يفتح المتصفح على http://localhost:3000.
-أول دخول: `admin` / `admin123` (والنظام هيطلب منك تغييرها).
-البيانات بتتحفظ في فولدر `data` جنب المشروع. **لعمل نسخة احتياطية انسخ الفولدر ده** وهو مش بيترفع على GitHub.
-خلّي نافذة التشغيل مفتوحة وإنت شغال، وأقفلها لما تخلص.
-الوضع ده لجهاز واحد. لو هتشغّله لأكتر من مستخدم أو على سيرفر استخدم الخطوات الكاملة تحت (PostgreSQL حقيقي).
-
----
-
-## 1) قاعدة البيانات
+## النشر
+الموقع بيتنشر من فرع `gh-pages` (Settings > Pages > Deploy from a branch). التحديث يدوي:
 ```bash
-docker compose up -d db        # أو استخدم أي PostgreSQL 14+ عندك
+cd web && npm ci && npm run build
+# انشر محتوى web/dist على فرع gh-pages (مع ملف .nojekyll)
 ```
 
-## 2) الباك إند
-```bash
-cd backend
-cp .env.example .env           # عدّل JWT_SECRET و ADMIN_PASSWORD
-npm install
-npm run build
-npm start                      # http://localhost:3000/api
-```
-أول تشغيل بيبني الجداول تلقائياً وبينشئ مستخدم مدير ومخزن "المخزن الرئيسي".
-لو ما حددتش `ADMIN_PASSWORD` المستخدم هيكون `admin` / `admin123` والنظام هيطلب منك تغييرها.
-
-اختبار شامل للـ API (محتاج السيرفر شغال):
-```bash
-API=http://localhost:3000/api npm run test:e2e
-```
-
-## 3) الويب
+## تشغيل الواجهة محلياً
 ```bash
 cd web
-npm install
-npm run dev                    # http://localhost:5173  (بيوصل للـ API على :3000 تلقائياً)
-npm run build                  # ملفات النشر في web/dist
+npm ci
+npm run dev        # http://localhost:5173 (بيوصل لـ Supabase مباشرة)
+npm test           # الاختبار الحي بيتخطّى إلا لو VITE_RUN_E2E=1 و VITE_TEST_PASSWORD
 ```
-عند النشر على سيرفر مختلف: اضبط `VITE_API_URL=https://عنوانك/api` قبل `npm run build`، واضبط `CORS_ORIGIN` في الباك إند.
 
-## 4) الموبايل (Flutter)
-محتاج Flutter SDK مثبّت. من داخل `mobile/`:
-```bash
-flutter create . --platforms=android,ios --org com.legacy --project-name mg_inventory
-flutter pub get
-```
-بعدها ضيف صلاحية الكاميرا:
-- أندرويد: في `android/app/src/main/AndroidManifest.xml` قبل `<application>`:
-  `<uses-permission android:name="android.permission.CAMERA"/>`
-  وللاتصال بسيرفر `http` (بدون https) أثناء التجربة ضيف على وسم `<application>`: `android:usesCleartextTraffic="true"`
-- iOS: في `ios/Runner/Info.plist` ضيف `NSCameraUsageDescription` برسالة مثل "نحتاج الكاميرا لمسح الباركود".
-
-```bash
-flutter run
-```
-من شاشة الدخول → "إعدادات السيرفر" اكتب عنوان الـ API. على محاكي أندرويد العنوان الافتراضي `http://10.0.2.2:3000/api` بيوصل لجهازك؛ على موبايل حقيقي استخدم IP جهازك أو عنوان السيرفر.
-
-## الصلاحيات
-أي مستخدم مسجّل يقدر يشوف الأصناف والأرصدة. الباقي بصلاحيات منفصلة: إدارة الأصناف، إدارة المخازن، إذن إضافة، إذن صرف، تحويل، الموردين والعملاء، التقارير، المستخدمين. تعديل صلاحيات مستخدم أو تعطيله بيسري فوراً حتى لو هو مسجّل دخول.
-
-## ملاحظات تصميم
-- الرصيد محفوظ في جدول أرصدة بيتحدّث داخل نفس العملية مع الإذن، والصرف أو التحويل بكمية أكبر من الرصيد بيترفض حتى لو اتبعت أكتر من طلب في نفس اللحظة.
-- الأصناف والمخازن والموردين اللي ليها حركات ما بتتمسحش، بتتعطّل بس.
-- الإذون ما بتتعدلش بعد تسجيلها (للحفاظ على سجل سليم).
+## تغيير صلاحيات المستخدمين
+قايمة الصلاحيات الـ 8 موجودة في مكانين لازم يتطابقوا: `PERMS` في `web/src/api.ts` و`PERMISSIONS` في `supabase/functions/users/index.ts`.
