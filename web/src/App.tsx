@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './auth';
-import { Loading } from './ui';
+import { Loading, ThemeButton } from './ui';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Items from './pages/Items';
@@ -53,6 +53,7 @@ function Shell({ children }: { children: ReactNode }) {
       <div className="topbar noprint">
         <button onClick={toggle} aria-label="القائمة" aria-expanded={open || !collapsed} title="فتح / إغلاق القائمة">☰</button>
         <strong>MG Inventory Control</strong>
+        <ThemeButton />
       </div>
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <aside className={'side noprint' + (open ? ' open' : '')}>

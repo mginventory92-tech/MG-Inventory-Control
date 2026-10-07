@@ -156,3 +156,23 @@ export function useConfirm() {
   );
   return { ask, node };
 }
+
+/* ---------- theme (تلقائي / فاتح / داكن) ---------- */
+export type Theme = 'auto' | 'light' | 'dark';
+const readTheme = (): Theme => {
+  try { const t = localStorage.getItem('theme'); return t === 'light' || t === 'dark' ? t : 'auto'; } catch { return 'auto'; }
+};
+export function applyTheme(t: Theme) {
+  if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  try { if (t === 'auto') localStorage.removeItem('theme'); else localStorage.setItem('theme', t); } catch { /* ignore */ }
+}
+const NEXT: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: 'auto' };
+const THEME_LABEL: Record<Theme, string> = { auto: '◐ تلقائي', light: '☀ فاتح', dark: '☾ داكن' };
+export function ThemeButton() {
+  const [t, setT] = useState<Theme>(readTheme);
+  return (
+    <button className="theme-btn" title="تغيير المظهر (تلقائي / فاتح / داكن)" onClick={() => { const n = NEXT[t]; applyTheme(n); setT(n); }}>
+      {THEME_LABEL[t]}
+    </button>
+  );
+}

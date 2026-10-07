@@ -85,3 +85,26 @@ describe('التقارير', () => {
     for (const r of ['projects', 'stocktakes', 'reports']) expect(lastApi).toMatch(new RegExp(`r = '${r}'`));
   });
 });
+
+describe('الثيم (فاتح/داكن)', () => {
+  const css = read('web/src/styles.css');
+  const tokens = (block: string) => [...block.matchAll(/^\s*(--[\w-]+):/gm)].map((m) => m[1]).sort();
+  const light = css.slice(css.indexOf(":root, :root[data-theme='light']"), css.indexOf(":root[data-theme='dark']"));
+  const dark = css.slice(css.indexOf(":root[data-theme='dark']"), css.indexOf('@media (prefers-color-scheme: dark)'));
+  const auto = css.slice(css.indexOf('@media (prefers-color-scheme: dark)'), css.indexOf('/* الطباعة دايمًا فاتحة'));
+  it('الداكن بيعرّف نفس ألوان الفاتح بالظبط (مفيش لون ناقص)', () => {
+    const colorVars = (t: string[]) => t.filter((x) => x !== '--radius' && x !== '--font');
+    expect(colorVars(tokens(dark))).toEqual(colorVars(tokens(light)));
+    expect(colorVars(tokens(auto))).toEqual(colorVars(tokens(light)));
+  });
+  it('مفيش لون مكتوب مباشر برّه الـ tokens (علشان أي حاجة جديدة تلبس الداكن تلقائي)', () => {
+    const rest = css.replace(/^\s*--[\w-]+:.*$/gm, '');
+    expect(rest.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/g) ?? []).toEqual([]);
+    for (const f of walk(join(root, 'web/src')).filter((x) => /\.tsx$/.test(x))) {
+      expect(readFileSync(f, 'utf-8').match(/#[0-9a-fA-F]{6}\b|rgba?\(/g) ?? [], f).toEqual([]);
+    }
+  });
+  it('الطباعة بترجع للفاتح', () => {
+    expect(css).toMatch(/@media print \{\s*:root, :root\[data-theme\]/);
+  });
+});
