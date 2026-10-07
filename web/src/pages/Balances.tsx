@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { downloadCsv, fmt, get, qs, type BalanceRow, type Warehouse } from '../api';
+import { fmt, get, qs, type BalanceRow, type Warehouse } from '../api';
+import { useAuth } from '../auth';
+import { APP_NAME, APP_SUB, exportPdf, exportXlsx } from '../export';
 import { Badge, Empty, ErrorBox, Loading, PageHead, ScanModal, StockBar, cameraScanSupported, useDebounced, useLoad } from '../ui';
 
 export default function Balances() {
@@ -15,18 +17,30 @@ export default function Balances() {
 
   const cols = data ? (wh ? data.warehouses.filter((w) => w.id === wh) : data.warehouses) : [];
 
-  const exportCsv = () => {
+  const { user } = useAuth();
+  const exportExcel = () => {
     if (!data) return;
-    downloadCsv('الأرصدة.csv', [
-      ['الكود', 'الصنف', 'التصنيف', 'الوحدة', ...cols.map((w) => w.name), 'الإجمالي', 'الحد الأدنى', 'الحالة'],
-      ...data.rows.map((r) => [r.item.code, r.item.name, r.item.category, r.item.unit, ...cols.map((w) => r.perWarehouse[w.id] ?? 0), r.qty, r.item.minQty, r.low ? 'تحت الحد' : 'سليم']),
-    ]);
+    const filters = [wh && `المخزن: ${data.warehouses.find((w) => w.id === wh)?.name}`, low && 'تحت الحد الأدنى فقط', dq && `بحث: ${dq}`].filter(Boolean) as string[];
+    return exportXlsx({
+      title: 'الأرصدة', filters, user: user?.name,
+      headers: ['الكود', 'الصنف', 'التصنيف', 'الوحدة', ...cols.map((w) => w.name), 'الإجمالي', 'الحد الأدنى', 'الحالة'],
+      numeric: [false, false, false, false, ...cols.map(() => true), true, true, false],
+      rows: data.rows.map((r) => [r.item.code, r.item.name, r.item.category, r.item.unit, ...cols.map((w) => r.perWarehouse[w.id] ?? 0), r.qty, r.item.minQty, r.low ? 'تحت الحد' : 'سليم']),
+    });
   };
 
   return (
-    <>
-      <PageHead title="الأرصدة"><button className="btn" onClick={exportCsv} disabled={!data?.rows.length}>تصدير Excel</button></PageHead>
-      <div className="toolbar">
+    <div className="report">
+      <div className="print-head">
+        <div><strong>{APP_NAME}</strong><span> — {APP_SUB}</span></div>
+        <h1>الأرصدة</h1>
+      </div>
+      <PageHead title="الأرصدة">
+        <button className="btn" onClick={exportExcel} disabled={!data?.rows.length}>تصدير Excel</button>
+        <button className="btn" onClick={() => exportPdf('الأرصدة')} disabled={!data?.rows.length}>تصدير PDF</button>
+        <button className="btn primary" onClick={() => window.print()} disabled={!data?.rows.length}>طباعة</button>
+      </PageHead>
+      <div className="toolbar noprint">
         <div className="grow"><input placeholder="بحث بالاسم أو الكود أو الباركود" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         {cameraScanSupported() && <button className="btn shrink" onClick={() => setScan(true)}>مسح باركود</button>}
         <select value={wh} onChange={(e) => setWh(e.target.value)} aria-label="المخزن">
@@ -60,6 +74,6 @@ export default function Balances() {
         </div>
       )}
       {scan && <ScanModal onClose={() => setScan(false)} onResult={(c) => { setQ(c); setScan(false); }} />}
-    </>
+    </div>
   );
 }

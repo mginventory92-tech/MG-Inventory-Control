@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import { Children, Fragment, isValidElement, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { fmt } from '../api';
 import { Badge } from '../ui';
@@ -13,7 +13,7 @@ export interface Filter {
 }
 export interface Ctx { openDoc: (id: string) => void; params: Record<string, string> }
 export interface Col { w?: number; h: string; v: (r: any) => string | number | null | undefined; cell?: (r: any, c: Ctx) => ReactNode; num?: boolean; nowrap?: boolean }
-export interface Tile { label: string; value: ReactNode; tone?: 'warn' | 'bad' | 'ok'; wide?: boolean }
+export interface Tile { label: string; value: ReactNode; text?: string; tone?: 'warn' | 'bad' | 'ok'; wide?: boolean }
 export interface Def {
   key: string; title: string; desc: string; filters: Filter[]; cols: Col[]; needItem?: boolean;
   tiles?: (d: any) => Tile[]; sortHint?: string;
@@ -48,7 +48,7 @@ export function ByUnit({ list, sign }: { list: { unit: string; qty: number }[]; 
   if (!list?.length) return <>—</>;
   return <>{list.map((u, i) => <Fragment key={u.unit}>{i > 0 && ' ، '}<span className="unit-chip"><b className="num">{sign ? signed(u.qty) : fmt(u.qty)}</b> {u.unit}</span></Fragment>)}</>;
 }
-const unitsText = (list: { unit: string; qty: number }[]) => list.map((u) => `${fmt(u.qty)} ${u.unit}`).join(' ، ');
+const unitsText = (list: { unit: string; qty: number }[], sign?: boolean) => list.map((u) => `${sign ? signed(u.qty) : fmt(u.qty)} ${u.unit}`).join(' ، ');
 
 const ledgerLink = (r: any, extra: Record<string, string | undefined> = {}) => {
   const p = new URLSearchParams({ itemId: r.itemId });
@@ -63,7 +63,7 @@ const DocBtn = ({ r, c }: { r: any; c: Ctx }) => (
 );
 const ProjLink = ({ r }: { r: any }) => (r.project ? <Link className="rlink" to={'/reports/project-usage?projectId=' + r.projectId}>{r.project}</Link> : <span className="muted">—</span>);
 
-const unitTiles = (d: any): Tile[] => [{ label: 'إجمالي الكميات حسب الوحدة', value: <ByUnit list={d.summary.byUnit} />, wide: true }];
+const unitTiles = (d: any): Tile[] => [{ label: 'إجمالي الكميات حسب الوحدة', value: <ByUnit list={d.summary.byUnit} />, text: unitsText(d.summary.byUnit), wide: true }];
 
 export const DEFS: Def[] = [
   {
@@ -203,7 +203,7 @@ export const DEFS: Def[] = [
       { label: 'أصناف فيها عجز', value: fmt(d.summary.shortage), tone: d.summary.shortage ? 'bad' : undefined },
       { label: 'أصناف فيها زيادة', value: fmt(d.summary.surplus), tone: d.summary.surplus ? 'ok' : undefined },
       { label: 'مطابق', value: fmt(d.summary.match) },
-      { label: 'صافي الفرق حسب الوحدة', value: <ByUnit list={d.summary.byUnit} sign />, wide: true },
+      { label: 'صافي الفرق حسب الوحدة', value: <ByUnit list={d.summary.byUnit} sign />, text: unitsText(d.summary.byUnit, true), wide: true },
     ],
     cols: [
       { h: 'رقم الجرد', v: (r) => r.number, nowrap: true },
@@ -240,3 +240,12 @@ export const DEFS: Def[] = [
 ];
 export const DEF_BY_KEY = Object.fromEntries(DEFS.map((d) => [d.key, d])) as Record<string, Def>;
 export { unitsText };
+
+/** نص عادي من أي ReactNode (علشان ملخص الإجماليات يتصدّر لـ Excel) */
+export function textOf(node: ReactNode): string {
+  if (node === null || node === undefined || typeof node === 'boolean') return '';
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join('');
+  if (isValidElement(node)) return Children.toArray((node.props as any).children).map(textOf).join('');
+  return '';
+}

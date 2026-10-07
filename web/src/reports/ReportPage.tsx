@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
-import { downloadCsv, get, qs, type Item } from '../api';
+import { get, qs, type Item } from '../api';
+import { APP_NAME, APP_SUB, exportPdf, exportXlsx } from '../export';
 import { useAuth } from '../auth';
 import ItemPicker from '../ItemPicker';
 import { Empty, ErrorBox, Field, Loading, PageHead, useDebounced, useLoad } from '../ui';
 import DocDetail from '../pages/DocDetail';
-import { DEFS, DEF_BY_KEY, unitsText, type Filter, type Meta } from './defs';
+import { DEFS, DEF_BY_KEY, textOf, type Filter, type Meta } from './defs';
 
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const PRESETS: { label: string; range: () => [string, string] }[] = [
@@ -59,21 +60,25 @@ function Report({ k }: { k: string }) {
   const activeFilters = def.filters.filter((f) => params[f.key]).map((f) => `${f.label}: ${valueLabel(f, params[f.key])}`);
 
   const rows: any[] = data?.rows ?? [];
-  const exportCsv = () => {
+  const [exporting, setExporting] = useState(false);
+  const exportExcel = async () => {
     if (!data) return;
-    downloadCsv(`${def.title}.csv`, [
-      [def.title], activeFilters.length ? ['الفلاتر', activeFilters.join(' | ')] : [], [],
-      def.cols.map((c) => c.h),
-      ...rows.map((r) => def.cols.map((c) => c.v(r))),
-      [], ...(data.summary?.byUnit ? [['إجمالي الكميات حسب الوحدة', unitsText(data.summary.byUnit)]] : []),
-    ]);
+    setExporting(true);
+    try {
+      await exportXlsx({
+        title: def.title, filters: activeFilters, user: user?.name,
+        tiles: def.tiles?.(data).map((t) => ({ label: t.label, text: t.text ?? textOf(t.value) })),
+        headers: def.cols.map((c) => c.h), numeric: def.cols.map((c) => !!c.num),
+        rows: rows.map((r) => def.cols.map((c) => c.v(r))),
+      });
+    } finally { setExporting(false); }
   };
 
   const now = new Date();
   return (
     <div className="report">
       <div className="print-head">
-        <div><strong>MG Inventory Control</strong><span> — نظام المخازن</span></div>
+        <div><strong>{APP_NAME}</strong><span> — {APP_SUB}</span></div>
         <h1>{def.title}</h1>
         {activeFilters.length > 0 && <p>{activeFilters.join('  •  ')}</p>}
         <p className="muted">طُبع بتاريخ {now.toLocaleDateString('en-GB')} {now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} — بواسطة {user?.name}</p>
@@ -81,8 +86,9 @@ function Report({ k }: { k: string }) {
 
       <div className="noprint crumbs"><Link to="/reports">← كل التقارير</Link></div>
       <PageHead title={def.title}>
-        <button className="btn" onClick={exportCsv} disabled={!rows.length}>تصدير Excel</button>
-        <button className="btn primary" onClick={() => window.print()} disabled={!rows.length && !data}>طباعة</button>
+        <button className="btn" onClick={exportExcel} disabled={!rows.length || exporting}>{exporting ? 'جاري التجهيز…' : 'تصدير Excel'}</button>
+        <button className="btn" onClick={() => exportPdf(def.title)} disabled={!rows.length}>تصدير PDF</button>
+        <button className="btn primary" onClick={() => window.print()} disabled={!rows.length}>طباعة</button>
       </PageHead>
       <p className="muted noprint" style={{ marginTop: -8 }}>{def.desc}</p>
 

@@ -378,7 +378,10 @@ a.stat:hover { border-color: var(--brand); }
 .print-head { display: none; }
 @media (max-width: 640px) { .tile.wide { grid-column: auto; } }
 
-@page report { size: A4 landscape; margin: 10mm; }
+@page report {
+  size: A4 landscape; margin: 10mm 10mm 14mm;
+  @bottom-center { content: "MG Inventory Control  —  صفحة " counter(page) " من " counter(pages); font-size: 8pt; color: gray; }
+}
 @media print {
   .report { page: report; }
   .print-head { display: block; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 3px solid var(--brand); }
@@ -386,7 +389,7 @@ a.stat:hover { border-color: var(--brand); }
   .print-head h1 { font-size: 1.5rem; margin: 2px 0; }
   .print-head p { margin: 0; font-size: .85rem; }
   .page-head { margin-bottom: 8px; }
-  .page-head h1 { display: none; }
+  .report .page-head h1 { display: none; }
   .tiles { grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .tile { padding: 4px 8px; break-inside: avoid; }
   .tile.wide { grid-column: span 2; }
