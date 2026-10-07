@@ -17,7 +17,7 @@ export default function Login() {
   return (
     <div className="login">
       <form className="login-card" onSubmit={submit}>
-        <h1>نظام المخازن</h1>
+        <h1>MG Inventory Control</h1>
         <p>سجّل الدخول للمتابعة</p>
         {err && <div className="error-box" role="alert">{err}</div>}
         <Field label="اسم المستخدم"><input value={username} onChange={(e) => setU(e.target.value)} autoFocus autoComplete="username" required /></Field>

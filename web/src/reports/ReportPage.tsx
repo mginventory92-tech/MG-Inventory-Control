@@ -73,7 +73,7 @@ function Report({ k }: { k: string }) {
   return (
     <div className="report">
       <div className="print-head">
-        <div><strong>نظام المخازن</strong><span> — MG Matrial control</span></div>
+        <div><strong>MG Inventory Control</strong><span> — نظام المخازن</span></div>
         <h1>{def.title}</h1>
         {activeFilters.length > 0 && <p>{activeFilters.join('  •  ')}</p>}
         <p className="muted">طُبع بتاريخ {now.toLocaleDateString('en-GB')} {now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} — بواسطة {user?.name}</p>

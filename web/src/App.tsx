@@ -53,11 +53,11 @@ function Shell({ children }: { children: ReactNode }) {
       <Watermark />
       <div className="topbar noprint">
         <button onClick={toggle} aria-label="القائمة" aria-expanded={open || !collapsed} title="فتح / إغلاق القائمة">☰</button>
-        <strong>نظام المخازن</strong>
+        <strong>MG Inventory Control</strong>
       </div>
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <aside className={'side noprint' + (open ? ' open' : '')}>
-        <div className="brand"><strong>نظام المخازن</strong><span>MG Matrial control</span></div>
+        <div className="brand"><strong>MG Inventory Control</strong><span>نظام المخازن</span></div>
         <nav className="nav">
           {NAV.filter((n) => allowed(n.perm)).map((n) => (
             <div key={n.to}>
