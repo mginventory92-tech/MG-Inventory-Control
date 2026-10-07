@@ -32,14 +32,24 @@ const NAV: { to: string; label: string; perm?: string | string[]; group?: string
 function Shell({ children }: { children: ReactNode }) {
   const { user, can, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('side_collapsed') === '1'; } catch { return false; }
+  });
+  const toggle = () => {
+    if (window.matchMedia('(max-width: 860px)').matches) { setOpen((o) => !o); return; }
+    setCollapsed((c) => {
+      try { localStorage.setItem('side_collapsed', c ? '0' : '1'); } catch { /* ignore */ }
+      return !c;
+    });
+  };
   const loc = useLocation();
   useEffect(() => setOpen(false), [loc.pathname]);
   const allowed = (p?: string | string[]) => !p || (Array.isArray(p) ? p.some(can) : can(p));
 
   return (
-    <div className="shell">
+    <div className={'shell' + (collapsed ? ' collapsed' : '')}>
       <div className="topbar noprint">
-        <button onClick={() => setOpen(true)} aria-label="القائمة">☰</button>
+        <button onClick={toggle} aria-label="القائمة" aria-expanded={open || !collapsed} title="فتح / إغلاق القائمة">☰</button>
         <strong>نظام المخازن</strong>
       </div>
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
