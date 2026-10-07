@@ -89,7 +89,7 @@ export const DEFS: Def[] = [
       { h: 'تحويل صادر', v: (r) => r.transferOut, num: true },
       { h: 'التسويات', v: (r) => r.adjust, num: true, cell: (r) => <span className={r.adjust < 0 ? 'over' : ''}>{r.adjust ? signed(r.adjust) : '0'}</span> },
       { h: 'الرصيد الحالي', v: (r) => r.closing, num: true, cell: (r) => <b>{fmt(r.closing)}</b> },
-      { h: 'متوسط التكلفة', v: (r) => r.unitCost, num: true, cell: (r) => money(r.unitCost) },
+      { h: 'آخر سعر شراء', v: (r) => r.unitCost, num: true, cell: (r) => money(r.unitCost) },
       { h: 'القيمة (ج.م)', v: (r) => r.value, num: true, cell: (r) => <b>{money(r.value)}</b> },
       { h: 'الحد الأدنى', v: (r) => r.minQty, num: true },
       { h: 'الحالة', v: (r) => STATUS_LABEL[r.status], cell: (r) => <Badge kind={STATUS_BADGE[r.status]}>{STATUS_LABEL[r.status]}</Badge> },
