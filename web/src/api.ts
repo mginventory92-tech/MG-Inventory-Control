@@ -134,7 +134,7 @@ export type DocType = 'in' | 'out' | 'transfer';
 export interface Project { id: string; name: string; code: string | null; notes: string | null; isActive: boolean }
 export interface User { id: string; name: string; username: string; permissions: string[]; isActive: boolean; mustChangePassword: boolean }
 export interface Warehouse { id: string; name: string; location: string | null; isActive: boolean }
-export interface Item { id: string; code: string; name: string; barcode: string | null; category: string | null; unit: string; minQty: number; notes: string | null; isActive: boolean; avgCost?: number }
+export interface Item { id: string; code: string; name: string; barcode: string | null; category: string | null; unit: string; minQty: number; notes: string | null; isActive: boolean; lastCost?: number }
 export interface Party { id: string; type: 'supplier' | 'customer'; name: string; phone: string | null; notes: string | null; isActive: boolean }
 interface DocLine { id: string; itemId: string; qty: number; unitPrice: number | null; value: number | null; item: Item }
 export interface StockDoc {
