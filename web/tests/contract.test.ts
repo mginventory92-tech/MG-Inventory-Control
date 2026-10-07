@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { PERMS } from '../src/api';
+import { DEFS } from '../src/reports/defs';
 
 const root = join(__dirname, '..', '..');
 const read = (p: string) => readFileSync(join(root, p), 'utf-8');
@@ -57,8 +58,30 @@ describe('سجل الـ migrations', () => {
     const tables = [...sql.matchAll(/create table public\.(\w+)/g)].map((m) => m[1]);
     for (const t of tables) expect(sql, t).toMatch(new RegExp(`alter table public\\.${t} enable row level security`));
   });
+  it('كل جدول بعد 001 اتسحبت صلاحياته صراحة من anon/authenticated', () => {
+    const later = migrations.slice(1).join('\n');
+    for (const t of [...later.matchAll(/create table public\.(\w+)/g)].map((m) => m[1])) {
+      expect(later, t).toMatch(new RegExp(`revoke all on [^;]*public\\.${t}\\b[^;]*from anon, authenticated`));
+    }
+  });
   it('دالة public.api بس هي المسموحة للمستخدمين المسجّلين، ومسحوبة من anon', () => {
     expect(sql).toMatch(/revoke all on function public\.api\(text,text,jsonb,jsonb\) from public, anon/);
     expect(sql).toMatch(/grant execute on function public\.api\(text,text,jsonb,jsonb\) to authenticated/);
+  });
+});
+
+describe('التقارير', () => {
+  const rep = migrations.filter((m) => m.includes('function private.r_reports')).pop() ?? '';
+  it('كل تقرير في الواجهة له فرع في r_reports', () => {
+    expect(DEFS.length).toBe(8);
+    for (const d of DEFS) expect(rep, d.key).toMatch(new RegExp(`rep (=|in \\([^)]*) *'${d.key}'`));
+    expect(rep).toMatch(/rep = 'meta'/);
+  });
+  it('فلاتر كل تقرير هي نفس المعاملات اللي بيقراها SQL', () => {
+    const known = new Set([...rep.matchAll(/q->>'(\w+)'/g)].map((m) => m[1]));
+    for (const d of DEFS) for (const f of d.filters) expect(known.has(f.key), `${d.key}.${f.key}`).toBe(true);
+  });
+  it('الراوتر فيه المشاريع والجرد والتقارير', () => {
+    for (const r of ['projects', 'stocktakes', 'reports']) expect(lastApi).toMatch(new RegExp(`r = '${r}'`));
   });
 });

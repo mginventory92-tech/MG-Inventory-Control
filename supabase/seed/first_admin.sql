@@ -10,6 +10,6 @@ begin
   insert into auth.identities (id,user_id,provider_id,identity_data,provider,last_sign_in_at,created_at,updated_at)
   values (gen_random_uuid(),uid,uid::text,jsonb_build_object('sub',uid::text,'email',em,'email_verified',true),'email',now(),now(),now());
   insert into public.profiles (id,name,username,permissions,must_change_password)
-  values (uid,'المدير','admin',array['items','warehouses','in','out','transfer','parties','reports','users'],true);
+  values (uid,'المدير','admin',array['items','warehouses','in','out','transfer','parties','reports','stocktake','users'],true);
   insert into public.warehouses (name) values ('المخزن الرئيسي') on conflict (name) do nothing;
 end $$;

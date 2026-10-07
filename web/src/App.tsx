@@ -9,7 +9,8 @@ import Warehouses from './pages/Warehouses';
 import Balances from './pages/Balances';
 import NewDocument from './pages/NewDocument';
 import Documents from './pages/Documents';
-import Movements from './pages/Movements';
+import ReportPage, { ReportsHub } from './reports/ReportPage';
+import Stocktake from './pages/Stocktake';
 import Parties from './pages/Parties';
 import UsersPage from './pages/Users';
 import Account from './pages/Account';
@@ -22,9 +23,10 @@ const NAV: { to: string; label: string; perm?: string | string[]; group?: string
   { to: '/new/out', label: 'إذن صرف', perm: 'out' },
   { to: '/new/transfer', label: 'تحويل بين المخازن', perm: 'transfer' },
   { to: '/documents', label: 'سجل الإذون', perm: ['reports', 'in', 'out', 'transfer'] },
-  { to: '/movements', label: 'حركة الأصناف', perm: 'reports', group: 'التقارير' },
+  { to: '/stocktake', label: 'جرد المخزن', perm: 'stocktake' },
+  { to: '/reports', label: 'التقارير', perm: 'reports', group: 'التقارير' },
   { to: '/warehouses', label: 'المخازن', group: 'البيانات' },
-  { to: '/parties', label: 'الموردين والعملاء' },
+  { to: '/parties', label: 'الموردين والعملاء والمشاريع' },
   { to: '/users', label: 'المستخدمين والصلاحيات', perm: 'users', group: 'الإدارة' },
   { to: '/account', label: 'حسابي' },
 ];
@@ -100,7 +102,10 @@ export default function App() {
         <Route path="/items" element={<Items />} />
         <Route path="/new/:type" element={<NewDocument />} />
         <Route path="/documents" element={<Guard perm={['reports', 'in', 'out', 'transfer']}><Documents /></Guard>} />
-        <Route path="/movements" element={<Guard perm="reports"><Movements /></Guard>} />
+        <Route path="/reports" element={<Guard perm="reports"><ReportsHub /></Guard>} />
+        <Route path="/reports/:key" element={<Guard perm="reports"><ReportPage /></Guard>} />
+        <Route path="/stocktake" element={<Guard perm="stocktake"><Stocktake /></Guard>} />
+        <Route path="/movements" element={<Navigate to="/reports" replace />} />
         <Route path="/warehouses" element={<Warehouses />} />
         <Route path="/parties" element={<Parties />} />
         <Route path="/users" element={<Guard perm="users"><UsersPage /></Guard>} />

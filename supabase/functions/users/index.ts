@@ -2,7 +2,7 @@
 // وبتتأكد الأول إن المتصل عنده صلاحية "users".
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const PERMISSIONS = ['items', 'warehouses', 'in', 'out', 'transfer', 'parties', 'reports', 'users'];
+const PERMISSIONS = ['items', 'warehouses', 'in', 'out', 'transfer', 'parties', 'reports', 'stocktake', 'users'];
 const DOMAIN = 'mginv.example.com';
 const cors = {
   'access-control-allow-origin': '*',
@@ -96,8 +96,9 @@ Deno.serve(async (req) => {
     if (id === me.id) return fail(400, 'لا يمكنك حذف حسابك بنفسك');
     const { data: u } = await admin.from('profiles').select('id').eq('id', id).maybeSingle();
     if (!u) return fail(404, 'المستخدم غير موجود');
-    const { count } = await admin.from('stock_documents').select('id', { count: 'exact', head: true }).eq('created_by', id);
-    if (count) return fail(409, 'المستخدم له حركات مسجلة، عطّل الحساب بدل الحذف');
+    const { count: docs } = await admin.from('stock_documents').select('id', { count: 'exact', head: true }).eq('created_by', id);
+    const { count: counts } = await admin.from('stock_counts').select('id', { count: 'exact', head: true }).eq('created_by', id);
+    if (docs || counts) return fail(409, 'المستخدم له حركات مسجلة، عطّل الحساب بدل الحذف');
     const { error } = await admin.auth.admin.deleteUser(id);
     if (error) return fail(400, 'تعذّر الحذف');
     return reply(200, { ok: true });

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { DOC_LABEL, fmt, get, post, qs, today, type DocType, type Item, type Party, type StockDoc, type Warehouse } from '../api';
+import { DOC_LABEL, fmt, get, post, qs, today, type DocType, type Item, type Party, type Project, type StockDoc, type Warehouse } from '../api';
 import { useAuth } from '../auth';
-import { ErrorBox, Field, Loading, PageHead, ScanModal, cameraScanSupported, useDebounced, useLoad, useToast } from '../ui';
+import { ErrorBox, Field, Loading, PageHead, useLoad, useToast } from '../ui';
+import ItemPicker from '../ItemPicker';
 
 interface Line { item: Item; qty: string }
 
@@ -26,6 +27,10 @@ function Form({ type }: { type: DocType }) {
   const [fromId, setFromId] = useState('');
   const [toId, setToId] = useState('');
   const [partyId, setPartyId] = useState('');
+  const projects = useLoad(() => (type === 'out' ? get<Project[]>('/projects') : Promise.resolve([] as Project[])), []);
+  const [projectId, setProjectId] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [issueReason, setIssueReason] = useState('');
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<Line[]>([]);
@@ -70,7 +75,8 @@ function Form({ type }: { type: DocType }) {
     setBusy(true);
     try {
       const doc = await post<StockDoc>('/documents', {
-        type, date, partyId: partyId || undefined, reference: reference || undefined, notes: notes || undefined,
+        type, date, partyId: partyId || undefined,
+        projectId: projectId || undefined, recipient: recipient || undefined, issueReason: issueReason || undefined, reference: reference || undefined, notes: notes || undefined,
         fromWarehouseId: type !== 'in' ? fromId : undefined, toWarehouseId: type !== 'out' ? toId : undefined,
         lines: lines.map((l) => ({ itemId: l.item.id, qty: Number(l.qty) })),
       });
@@ -106,6 +112,14 @@ function Form({ type }: { type: DocType }) {
               </Field>)}
             <Field label="رقم المرجع" hint={type === 'in' ? 'رقم فاتورة المورد مثلاً' : undefined}><input value={reference} onChange={(e) => setReference(e.target.value)} /></Field>
           </div>
+          {type === 'out' && (
+            <div className="grid3">
+              <Field label="المشروع">
+                <select value={projectId} onChange={(e) => setProjectId(e.target.value)}><option value="">بدون مشروع</option>{projects.data?.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+              </Field>
+              <Field label="المستلم (الشخص)"><input value={recipient} onChange={(e) => setRecipient(e.target.value)} /></Field>
+              <Field label="سبب الصرف"><input value={issueReason} onChange={(e) => setIssueReason(e.target.value)} /></Field>
+            </div>)}
           <Field label="ملاحظات"><input value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
         </div>
 
@@ -138,64 +152,5 @@ function Form({ type }: { type: DocType }) {
         </div>
       </form>
     </>
-  );
-}
-
-/** Search box that also works with USB/Bluetooth barcode scanners (they type the code then press Enter). */
-function ItemPicker({ onPick, disabled, disabledHint }: { onPick: (i: Item) => void; disabled?: boolean; disabledHint?: string }) {
-  const [text, setText] = useState('');
-  const dt = useDebounced(text, 200);
-  const [results, setResults] = useState<Item[]>([]);
-  const [msg, setMsg] = useState('');
-  const [scan, setScan] = useState(false);
-  const [hot, setHot] = useState(0);
-  const box = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!dt.trim()) { setResults([]); return; }
-    let live = true;
-    get<Item[]>('/items' + qs({ q: dt.trim() })).then((r) => { if (live) { setResults(r.slice(0, 8)); setHot(0); } }).catch(() => {});
-    return () => { live = false; };
-  }, [dt]);
-
-  const pick = (it: Item) => { onPick(it); setText(''); setResults([]); setMsg(''); box.current?.focus(); };
-
-  const byCode = async (code: string) => {
-    try { pick(await get<Item>('/items/lookup/' + encodeURIComponent(code.trim()))); return true; } catch { return false; }
-  };
-  const onEnter = async () => {
-    const t = text.trim();
-    if (!t) return;
-    if (await byCode(t)) return;
-    const r = results.length ? results : await get<Item[]>('/items' + qs({ q: t }));
-    if (r.length === 1) return pick(r[0]);
-    if (r.length > 1 && results.length) return pick(results[hot]);
-    setMsg(`لا يوجد صنف مطابق لـ "${t}"`);
-  };
-
-  return (
-    <div>
-      <div className="pick-row">
-        <div className="pick">
-          <input ref={box} value={text} disabled={disabled} placeholder={disabled ? disabledHint : 'باركود / كود / اسم الصنف'} autoFocus={!disabled}
-            onChange={(e) => { setText(e.target.value); setMsg(''); }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); onEnter(); }
-              else if (e.key === 'ArrowDown') { e.preventDefault(); setHot((h) => Math.min(h + 1, results.length - 1)); }
-              else if (e.key === 'ArrowUp') { e.preventDefault(); setHot((h) => Math.max(h - 1, 0)); }
-            }} />
-          {results.length > 0 && (
-            <div className="pick-results">
-              {results.map((r, i) => (
-                <button type="button" key={r.id} className={i === hot ? 'hot' : ''} onClick={() => pick(r)}>
-                  <span>{r.name}</span><span className="muted">{r.code}</span>
-                </button>))}
-            </div>)}
-        </div>
-        {cameraScanSupported() && <button type="button" className="btn" disabled={disabled} onClick={() => setScan(true)}>مسح بالكاميرا</button>}
-      </div>
-      {msg && <div className="over" style={{ marginTop: 6 }}>{msg}</div>}
-      {scan && <ScanModal onClose={() => setScan(false)} onResult={async (c) => { setScan(false); if (!(await byCode(c))) setMsg(`لا يوجد صنف بالباركود ${c}`); }} />}
-    </div>
   );
 }

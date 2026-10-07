@@ -15,6 +15,9 @@ export default function DocDetail({ id, onClose }: { id: string; onClose: () => 
             {d.fromWarehouse && <div><dt>من مخزن</dt><dd>{d.fromWarehouse.name}</dd></div>}
             {d.toWarehouse && <div><dt>إلى مخزن</dt><dd>{d.toWarehouse.name}</dd></div>}
             {d.party && <div><dt>{party}</dt><dd>{d.party.name}</dd></div>}
+            {d.project && <div><dt>المشروع</dt><dd>{d.project.name}</dd></div>}
+            {d.recipient && <div><dt>المستلم</dt><dd>{d.recipient}</dd></div>}
+            {d.issueReason && <div><dt>سبب الصرف</dt><dd>{d.issueReason}</dd></div>}
             {d.reference && <div><dt>المرجع</dt><dd>{d.reference}</dd></div>}
             <div><dt>سجّله</dt><dd>{d.createdBy?.name}</dd></div>
           </dl>
