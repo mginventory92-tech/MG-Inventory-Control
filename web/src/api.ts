@@ -134,9 +134,9 @@ export type DocType = 'in' | 'out' | 'transfer';
 export interface Project { id: string; name: string; code: string | null; notes: string | null; isActive: boolean }
 export interface User { id: string; name: string; username: string; permissions: string[]; isActive: boolean; mustChangePassword: boolean }
 export interface Warehouse { id: string; name: string; location: string | null; isActive: boolean }
-export interface Item { id: string; code: string; name: string; barcode: string | null; category: string | null; unit: string; minQty: number; notes: string | null; isActive: boolean }
+export interface Item { id: string; code: string; name: string; barcode: string | null; category: string | null; unit: string; minQty: number; notes: string | null; isActive: boolean; avgCost?: number }
 export interface Party { id: string; type: 'supplier' | 'customer'; name: string; phone: string | null; notes: string | null; isActive: boolean }
-interface DocLine { id: string; itemId: string; qty: number; item: Item }
+interface DocLine { id: string; itemId: string; qty: number; unitPrice: number | null; value: number | null; item: Item }
 export interface StockDoc {
   id: string; number: string; type: DocType; date: string; reference: string | null; notes: string | null;
   fromWarehouse: Warehouse | null; toWarehouse: Warehouse | null; party: Party | null;
@@ -159,6 +159,7 @@ export const PERMS: { key: string; label: string }[] = [
 ];
 export const DOC_LABEL: Record<DocType, string> = { in: 'إذن إضافة', out: 'إذن صرف', transfer: 'تحويل' };
 export const fmt = (n: number | null | undefined) => (n === null || n === undefined ? '' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 3 }));
+export const money = (n: number | null | undefined) => (n === null || n === undefined ? '' : Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 export const today = () => new Date().toISOString().slice(0, 10);
 
 export function downloadCsv(filename: string, rows: (string | number | null | undefined)[][]) {

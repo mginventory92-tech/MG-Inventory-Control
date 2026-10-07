@@ -5,7 +5,7 @@ import { useAuth } from '../auth';
 import { ErrorBox, Field, Loading, PageHead, useLoad, useToast } from '../ui';
 import ItemPicker from '../ItemPicker';
 
-interface Line { item: Item; qty: string }
+interface Line { item: Item; qty: string; price: string }
 
 const TITLE: Record<DocType, string> = { in: 'إذن إضافة للمخزن', out: 'إذن صرف من المخزن', transfer: 'تحويل بين المخازن' };
 
@@ -56,7 +56,7 @@ function Form({ type }: { type: DocType }) {
     setLines((ls) => {
       const i = ls.findIndex((l) => l.item.id === item.id);
       if (i >= 0) return ls.map((l, k) => (k === i ? { ...l, qty: String((Number(l.qty) || 0) + qty) } : l));
-      return [...ls, { item, qty: String(qty) }];
+      return [...ls, { item, qty: String(qty), price: '' }];
     });
 
   const checks = lines.map((l) => {
@@ -70,6 +70,7 @@ function Form({ type }: { type: DocType }) {
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setErr('');
     if (!lines.length) return setErr('أضف صنف واحد على الأقل.');
+    if (type === 'in' && lines.some((l) => l.price !== '' && !(Number(l.price) >= 0))) return setErr('سعر الوحدة لازم يكون صفر أو أكتر.');
     if (hasBad) return setErr('كل الكميات لازم تكون أكبر من صفر.');
     if (hasOver) return setErr('في أصناف كميتها أكبر من الرصيد المتاح في المخزن.');
     setBusy(true);
@@ -78,7 +79,7 @@ function Form({ type }: { type: DocType }) {
         type, date, partyId: partyId || undefined,
         projectId: projectId || undefined, recipient: recipient || undefined, issueReason: issueReason || undefined, reference: reference || undefined, notes: notes || undefined,
         fromWarehouseId: type !== 'in' ? fromId : undefined, toWarehouseId: type !== 'out' ? toId : undefined,
-        lines: lines.map((l) => ({ itemId: l.item.id, qty: Number(l.qty) })),
+        lines: lines.map((l) => ({ itemId: l.item.id, qty: Number(l.qty), unitPrice: type === 'in' && l.price !== '' ? Number(l.price) : undefined })),
       });
       toast(`تم تسجيل ${DOC_LABEL[type]} رقم ${doc.number}`);
       nav(`/documents?open=${doc.id}`, { replace: true });
@@ -129,7 +130,7 @@ function Form({ type }: { type: DocType }) {
           {lines.length === 0 ? <p className="muted" style={{ marginTop: 14 }}>امسح الباركود أو ابحث بالاسم أو الكود لإضافة صنف.</p> : (
             <div className="table-wrap" style={{ marginTop: 12 }}>
               <table className="doc-lines">
-                <thead><tr><th>الصنف</th>{type !== 'in' && <th className="num">المتاح</th>}<th style={{ width: 140 }}>الكمية</th><th>الوحدة</th><th /></tr></thead>
+                <thead><tr><th>الصنف</th>{type !== 'in' && <th className="num">المتاح</th>}<th style={{ width: 140 }}>الكمية</th><th>الوحدة</th>{type === 'in' && <th style={{ width: 130 }}>سعر الوحدة</th>}<th /></tr></thead>
                 <tbody>{lines.map((l, i) => (
                   <tr key={l.item.id}>
                     <td>{l.item.name}<div className="muted">{l.item.code}</div></td>
@@ -140,6 +141,8 @@ function Form({ type }: { type: DocType }) {
                       {checks[i].over && <div className="over">أكبر من المتاح</div>}
                     </td>
                     <td>{l.item.unit}</td>
+                    {type === 'in' && <td><input type="number" inputMode="decimal" min="0" step="any" placeholder="اختياري" value={l.price} aria-label={'سعر ' + l.item.name}
+                      onChange={(e) => setLines((ls) => ls.map((x, k) => (k === i ? { ...x, price: e.target.value } : x)))} /></td>}
                     <td className="actions"><button type="button" className="icon-btn" aria-label="حذف السطر" onClick={() => setLines((ls) => ls.filter((_, k) => k !== i))}>✕</button></td>
                   </tr>))}</tbody>
               </table>

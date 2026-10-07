@@ -1,6 +1,6 @@
 import { Children, Fragment, isValidElement, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { fmt } from '../api';
+import { fmt, money } from '../api';
 import { Badge } from '../ui';
 
 export interface Meta {
@@ -73,6 +73,7 @@ export const DEFS: Def[] = [
       { label: 'إجمالي الأصناف', value: fmt(d.summary.items) },
       { label: 'منخفض', value: fmt(d.summary.low), tone: d.summary.low ? 'warn' : undefined },
       { label: 'نافد', value: fmt(d.summary.out), tone: d.summary.out ? 'bad' : undefined },
+      { label: 'قيمة المخزون (ج.م)', value: money(d.summary.value) },
       ...unitTiles(d),
     ],
     cols: [
@@ -88,6 +89,8 @@ export const DEFS: Def[] = [
       { h: 'تحويل صادر', v: (r) => r.transferOut, num: true },
       { h: 'التسويات', v: (r) => r.adjust, num: true, cell: (r) => <span className={r.adjust < 0 ? 'over' : ''}>{r.adjust ? signed(r.adjust) : '0'}</span> },
       { h: 'الرصيد الحالي', v: (r) => r.closing, num: true, cell: (r) => <b>{fmt(r.closing)}</b> },
+      { h: 'متوسط التكلفة', v: (r) => r.unitCost, num: true, cell: (r) => money(r.unitCost) },
+      { h: 'القيمة (ج.م)', v: (r) => r.value, num: true, cell: (r) => <b>{money(r.value)}</b> },
       { h: 'الحد الأدنى', v: (r) => r.minQty, num: true },
       { h: 'الحالة', v: (r) => STATUS_LABEL[r.status], cell: (r) => <Badge kind={STATUS_BADGE[r.status]}>{STATUS_LABEL[r.status]}</Badge> },
     ],
@@ -121,7 +124,7 @@ export const DEFS: Def[] = [
   {
     key: 'issues', title: 'المنصرفات', desc: 'اللي خرج من المخزن، لمين، وليه، وعلى أنهي مشروع.',
     filters: [F.from, F.to, F.warehouse, F.project, F.item, F.category, { key: 'recipient', label: 'المستلم', type: 'text' }, F.user, F.q],
-    tiles: (d) => [{ label: 'عدد أذون الصرف', value: fmt(d.summary.docs) }, { label: 'عدد الأصناف', value: fmt(d.summary.items) }, ...unitTiles(d)],
+    tiles: (d) => [{ label: 'عدد أذون الصرف', value: fmt(d.summary.docs) }, { label: 'عدد الأصناف', value: fmt(d.summary.items) }, { label: 'تكلفة المنصرف (ج.م)', value: money(d.summary.value) }, ...unitTiles(d)],
     cols: [
       { h: 'رقم الإذن', v: (r) => r.number, cell: (r, c) => <DocBtn r={r} c={c} />, nowrap: true },
       { h: 'التاريخ', v: (r) => r.date, nowrap: true },
@@ -131,6 +134,8 @@ export const DEFS: Def[] = [
       { h: 'التصنيف', v: (r) => r.category },
       { h: 'الوحدة', v: (r) => r.unit },
       { h: 'الكمية', v: (r) => r.qty, num: true, cell: (r) => <b>{fmt(r.qty)}</b> },
+      { h: 'تكلفة الوحدة', v: (r) => r.unitPrice, num: true, cell: (r) => money(r.unitPrice) },
+      { h: 'التكلفة (ج.م)', v: (r) => r.value, num: true, cell: (r) => <b>{money(r.value)}</b> },
       { h: 'المستلم', v: (r) => r.recipient },
       { h: 'الجهة', v: (r) => r.party },
       { h: 'المشروع', v: (r) => r.project, cell: (r) => <ProjLink r={r} /> },
@@ -141,7 +146,7 @@ export const DEFS: Def[] = [
   {
     key: 'receipts', title: 'الواردات / الاستلام', desc: 'اللي دخل المخزن، منين، وإمتى.',
     filters: [F.from, F.to, F.warehouse, { key: 'partyId', label: 'المورد', type: 'meta', meta: 'suppliers', all: 'كل الموردين' }, F.item, F.category, F.user, F.q],
-    tiles: (d) => [{ label: 'عدد أذون الاستلام', value: fmt(d.summary.docs) }, { label: 'عدد الأصناف', value: fmt(d.summary.items) }, ...unitTiles(d)],
+    tiles: (d) => [{ label: 'عدد أذون الاستلام', value: fmt(d.summary.docs) }, { label: 'عدد الأصناف', value: fmt(d.summary.items) }, { label: 'قيمة المستلم (ج.م)', value: money(d.summary.value) }, ...unitTiles(d)],
     cols: [
       { h: 'رقم إذن الاستلام', v: (r) => r.number, cell: (r, c) => <DocBtn r={r} c={c} />, nowrap: true },
       { h: 'التاريخ', v: (r) => r.date, nowrap: true },
@@ -152,6 +157,8 @@ export const DEFS: Def[] = [
       { h: 'التصنيف', v: (r) => r.category },
       { h: 'الوحدة', v: (r) => r.unit },
       { h: 'الكمية', v: (r) => r.qty, num: true, cell: (r) => <b>{fmt(r.qty)}</b> },
+      { h: 'سعر الوحدة', v: (r) => r.unitPrice, num: true, cell: (r) => money(r.unitPrice) },
+      { h: 'القيمة (ج.م)', v: (r) => r.value, num: true, cell: (r) => <b>{money(r.value)}</b> },
       { h: 'المستخدم', v: (r) => r.user },
       { h: 'ملاحظات', v: (r) => r.notes },
     ],
@@ -177,7 +184,7 @@ export const DEFS: Def[] = [
     key: 'project-usage', title: 'المواد المصروفة على المشاريع', desc: 'المشروع استهلك إيه من المخازن، وكام مرة اتصرف له.',
     filters: [F.project, F.from, F.to, F.warehouse, F.category, F.item],
     tiles: (d) => [
-      { label: 'أذون الصرف', value: fmt(d.summary.docs) }, { label: 'عدد الأصناف', value: fmt(d.summary.items) }, { label: 'عدد المشاريع', value: fmt(d.summary.projects) },
+      { label: 'أذون الصرف', value: fmt(d.summary.docs) }, { label: 'عدد الأصناف', value: fmt(d.summary.items) }, { label: 'عدد المشاريع', value: fmt(d.summary.projects) }, { label: 'تكلفة المواد (ج.م)', value: money(d.summary.value) },
       { label: 'أذون صرف بدون مشروع', value: fmt(d.summary.unassignedDocs), tone: d.summary.unassignedDocs ? 'warn' : undefined },
       {
         label: 'أكتر الأصناف صرفًا (بعدد المرات)', wide: true,
@@ -191,6 +198,7 @@ export const DEFS: Def[] = [
       { h: 'الوحدة', v: (r) => r.unit },
       { h: 'الكمية', v: (r) => r.qty, num: true, cell: (r) => <b>{fmt(r.qty)}</b> },
       { w: 110, h: 'المخزن', v: (r) => r.warehouse },
+      { h: 'التكلفة (ج.م)', v: (r) => r.value, num: true, cell: (r) => <b>{money(r.value)}</b> },
       { h: 'عدد مرات الصرف', v: (r) => r.times, num: true },
       { h: 'آخر صرف', v: (r) => r.lastDate, nowrap: true },
     ],

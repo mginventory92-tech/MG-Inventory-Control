@@ -1,8 +1,9 @@
-import { DOC_LABEL, fmt, get, type StockDoc } from '../api';
+import { DOC_LABEL, fmt, get, money, type StockDoc } from '../api';
 import { Badge, ErrorBox, Loading, Modal, useLoad } from '../ui';
 
 export default function DocDetail({ id, onClose }: { id: string; onClose: () => void }) {
   const { data: d, error, loading } = useLoad(() => get<StockDoc>('/documents/' + id), [id]);
+  const priced = !!d && d.type !== 'transfer' && d.lines.some((l) => l.unitPrice !== null);
   const party = d?.type === 'in' ? 'المورد' : 'العميل / الجهة';
   return (
     <Modal title={d ? `${DOC_LABEL[d.type]} ${d.number}` : 'الإذن'} onClose={onClose} wide>
@@ -22,8 +23,9 @@ export default function DocDetail({ id, onClose }: { id: string; onClose: () => 
             <div><dt>سجّله</dt><dd>{d.createdBy?.name}</dd></div>
           </dl>
           <div className="table-wrap"><table>
-            <thead><tr><th>الكود</th><th>الصنف</th><th>الوحدة</th><th className="num">الكمية</th></tr></thead>
-            <tbody>{d.lines.map((l) => <tr key={l.id}><td>{l.item.code}</td><td>{l.item.name}</td><td>{l.item.unit}</td><td className="num">{fmt(l.qty)}</td></tr>)}</tbody>
+            <thead><tr><th>الكود</th><th>الصنف</th><th>الوحدة</th><th className="num">الكمية</th>{priced && <><th className="num">{d.type === 'in' ? 'سعر الوحدة' : 'تكلفة الوحدة'}</th><th className="num">القيمة</th></>}</tr></thead>
+            <tbody>{d.lines.map((l) => <tr key={l.id}><td>{l.item.code}</td><td>{l.item.name}</td><td>{l.item.unit}</td><td className="num">{fmt(l.qty)}</td>{priced && <><td className="num">{money(l.unitPrice)}</td><td className="num">{money(l.value)}</td></>}</tr>)}</tbody>
+            {priced && <tfoot><tr><th colSpan={5}>الإجمالي</th><th className="num">{money(d.lines.reduce((s, l) => s + (l.value ?? 0), 0))}</th></tr></tfoot>}
           </table></div>
           {d.notes && <p><strong>ملاحظات:</strong> {d.notes}</p>}
           <div className="form-actions noprint"><button className="btn primary" onClick={() => window.print()}>طباعة</button></div>
