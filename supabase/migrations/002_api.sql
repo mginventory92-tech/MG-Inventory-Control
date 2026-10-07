@@ -237,6 +237,9 @@ begin
        and ((q->>'lowOnly') is distinct from 'true' or (r->>'low')::boolean);
     select coalesce(jsonb_agg(private.wh_json(x) order by x.name),'[]'::jsonb) into whs from public.warehouses x where x.is_active;
     return jsonb_build_object('warehouses',whs,'rows',rows);
+  elsif parts[2] = 'low' then
+    select coalesce(jsonb_agg(r),'[]'::jsonb) into rows from private.stock_rows(null,null) r where (r->>'low')::boolean;
+    return rows;
   elsif parts[2] = 'available' then
     if private.blank(q->>'warehouseId') is null then perform private.fail(400,'warehouseId مطلوب'); end if;
     select coalesce(jsonb_object_agg(item_id,qty),'{}'::jsonb) into rows from public.stock_balances where warehouse_id = (q->>'warehouseId')::uuid;
@@ -418,6 +421,7 @@ begin
   elsif r = 'dashboard' then return private.r_dashboard(me);
   elsif r = 'users' and p_method = 'GET' then
     perform private.need(me,'users');
+    if parts[2] = 'permissions' then return '["items","warehouses","in","out","transfer","parties","reports","users"]'::jsonb; end if;
     select coalesce(jsonb_agg(private.user_json(u) order by u.created_at),'[]'::jsonb) into arr from public.profiles u;
     return arr;
   end if;
