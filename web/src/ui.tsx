@@ -156,12 +156,3 @@ export function useConfirm() {
   );
   return { ask, node };
 }
-
-/** علامة مائية واحدة كبيرة في نص الصفحة (بتظهر في الطباعة كمان، وكل صفحة مطبوعة ليها واحدة). مش بتمنع الضغط. */
-export function Watermark({ text = 'MG Inventory Control' }: { text?: string }) {
-  return (
-    <svg className="watermark" aria-hidden="true" focusable="false">
-      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" transform="rotate(-25)" style={{ transformOrigin: '50% 50%' }}>{text}</text>
-    </svg>
-  );
-}
