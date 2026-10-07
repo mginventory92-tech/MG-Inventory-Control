@@ -290,3 +290,11 @@ a.stat:hover { border-color: var(--brand); }
 
 .filters > summary { cursor: pointer; font-weight: 600; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
 .filters:not([open]) > summary { margin-bottom: 0; }
+
+/* ---------- watermark ---------- */
+.watermark { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 150; }
+.watermark text { font-family: var(--font); font-size: 28px; font-weight: 600; fill: #1b2430; fill-opacity: .055; letter-spacing: 1px; }
+@media print {
+  .watermark { display: block !important; z-index: 0; }
+  .watermark text { fill-opacity: .10; }
+}
