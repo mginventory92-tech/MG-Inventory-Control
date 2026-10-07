@@ -293,7 +293,7 @@ a.stat:hover { border-color: var(--brand); }
 
 /* ---------- watermark ---------- */
 .watermark { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 150; }
-.watermark text { font-family: var(--font); font-size: 28px; font-weight: 600; fill: #1b2430; fill-opacity: .055; letter-spacing: 1px; }
+.watermark text { font-family: var(--font); font-size: clamp(32px, 6vw, 84px); font-weight: 600; fill: #1b2430; fill-opacity: .06; letter-spacing: 2px; }
 @media print {
   .watermark { display: block !important; z-index: 0; }
   .watermark text { fill-opacity: .10; }
